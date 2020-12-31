@@ -1,7 +1,7 @@
 import React from 'react';
 import './ImageLinkForm.css';
 
-const ImageLinkForm = ({ inputChange, detectClick }) => {
+const ImageLinkForm = ({ inputChange, detectClick, userUpdateDetect }) => {
   return (
     <div className="imagelinkform">
       <p className="f6">

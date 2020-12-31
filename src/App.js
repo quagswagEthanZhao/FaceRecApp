@@ -33,11 +33,17 @@ class App extends Component {
       imageUrl: '',
       box: {},
       userStatus: 'signin',
-      isSignedIn: false
+      isSignedIn: false,
+      currentUser: {}
     }
   }
 
-
+  // componentDidMount() {
+  //   fetch('http://localhost:3000')
+  //     .then(response => response.json())
+  //     .then(console.log)
+  //     .catch(error => console.log(error));
+  // }
   onDisplayFaceBox = (box) => {
     console.log(box);
     this.setState({ box });
@@ -64,17 +70,30 @@ class App extends Component {
   }
 
   onDetectClick = () => {
-    console.log(`Clicked with input ${this.state.imageUrl}`);
-    this.setState({ imageUrl: this.state.input });
-    app.models
-      .predict(
-        Clarifai.FACE_DETECT_MODEL,
-        this.state.input)
-      .then(response => {
-        // console.log('hi', response.outputs[0].data.regions[0].region_info.bounding_box);
-        this.onDisplayFaceBox(this.onCalculateFaceLocation(response))
+    // console.log(`Clicked with input ${this.state.imageUrl}`);
+    if (this.state.imageUrl.length > 0) {
+      this.setState({ imageUrl: this.state.input });
+      app.models
+        .predict(
+          Clarifai.FACE_DETECT_MODEL,
+          this.state.input)
+        .then(response => {
+          // console.log('hi', response.outputs[0].data.regions[0].region_info.bounding_box);
+          this.onDisplayFaceBox(this.onCalculateFaceLocation(response))
+        })
+        .catch(error => console.log(error.message));
+    }
+
+    fetch('http://localhost:3000/users/updateEntries', {
+      method: 'put',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: this.state.currentUser.id
       })
-      .catch(error => console.log(error.message))
+    }).then(response => response.json()).then(data => this.setState({ currentUser: data.currentUser }))
+
+
+
   }
 
   onUserStatusChange = (value) => {
@@ -85,7 +104,18 @@ class App extends Component {
     }
     this.setState({ userStatus: value });
   }
-
+  getCurrentUser = (user) => {
+    this.setState({ currentUser: user });
+  }
+  // onUserUpdateDetect = () => {
+  //   fetch('http://localhost:3000/signin', {
+  //     method: 'put',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: {
+  //       id: this.state.currentUser.id
+  //     }
+  //   }).then(response => response.json()).then(data => console.log(data.currentUser))
+  // }
   render() {
     return (
       <div className="App" >
@@ -94,13 +124,13 @@ class App extends Component {
           params={particlesConfig} />
         <Navigation userStatusChange={this.onUserStatusChange} isSignedIn={this.state.isSignedIn} />
         { this.state.userStatus === 'home'
-          ? <div> <Rank />
-            <ImageForm inputChange={this.onInputChange} detectClick={this.onDetectClick} />
+          ? <div> <Rank currentUser={this.state.currentUser} />
+            <ImageForm userUpdateDetect={this.onUserUpdateDetect} inputChange={this.onInputChange} detectClick={this.onDetectClick} />
             <FaceRecognition box={this.state.box} imageUrl={this.state.imageUrl} />
           </div>
           : (
             this.state.userStatus === 'signin'
-              ? <Sgnin userStatusChange={this.onUserStatusChange} />
+              ? <Sgnin getCurrentUser={this.getCurrentUser} userStatusChange={this.onUserStatusChange} />
               : <Register userStatusChange={this.onUserStatusChange} />
           )
 
